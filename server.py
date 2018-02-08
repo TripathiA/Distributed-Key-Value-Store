@@ -7,13 +7,20 @@ from threading import Thread
 import multiprocessing
 
 
+#stabilize
+#try except if not key available
+#try except for server not available 
+
+
 key_value_store = dict()
 servers = dict()
 
-
 def get(key,distribute=True):
-    curr = key_value_store[key][1]
-    ret = key_value_store[key]
+    curr = -1
+    ret = -1
+    if key in key_value_store:
+        curr = key_value_store[key][1]
+        ret = key_value_store[key]
     if distribute:
         for s in servers:
             val = servers[s].get(key,False)
@@ -21,7 +28,7 @@ def get(key,distribute=True):
                 ret = val
                 key_value_store[key] = val
     print("val "+str(key_value_store))
-    return key_value_store[key]
+    return [ret,curr]
 
 def put_value(key,value):
     if(key in key_value_store):
@@ -40,6 +47,22 @@ def disconnect_server(port):
 def today():
     today = datetime.datetime.today()
     return xmlrpc.client.DateTime(today)
+
+def get_kvstore():
+    return key_value_store
+
+def set_kvstore(kvstore):
+    key_value_store = kvstore
+
+def stabilize():
+    for s in servers:
+        kvstore = servers[s].get_kvstore()
+        for key in kvstore:
+            if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
+                key_value_store[key] = kvstore[key]
+    for s in servers:
+        servers[s].set_kvstore(key_value_store)
+
 
 #parsing commands
 # valid commands
@@ -80,12 +103,10 @@ def start(id,queue):
     queue.put("Manu")
     server.serve_forever()
 
-    
 
 if __name__== "__main__":
     try:
         port = int(sys.argv[1])
-        queue = sys.argv[2]
     except:
         print("Give appropriate port number")
         sys.exit(-1)
@@ -97,9 +118,5 @@ if __name__== "__main__":
     server.register_function(connect_to_server, "connect_to_server")
     server.register_function(disconnect_server, "disconnect_server")
     server.register_function(parse_req, "request")
-    thread = Thread(target = threaded_function, args= (server,))
-    thread.start()
-    queue.put("Manu")
-    # server.serve_forever()
-
+    server.serve_forever()
 
