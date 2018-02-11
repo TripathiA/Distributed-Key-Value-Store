@@ -7,7 +7,6 @@ from threading import Thread
 import multiprocessing
 import random
 
-
 key_value_store = dict()
 servers = dict()
 
@@ -25,7 +24,6 @@ def today():
     return xmlrpc.client.DateTime(today)
 
 
-
 def get(key):
     serv = random.randint(0,len(servers))
     val = servers.values()[serv].request("get "+str(key))
@@ -34,7 +32,6 @@ def get(key):
 def put_value(key,value):
     serv = random.randint(0,len(servers))
     servers.values()[serv].request("put "+str(key)+" "+str(value))
-
 
 #parsing commands
 # valid commands
