@@ -2,36 +2,44 @@ import datetime
 from xmlrpc.server import SimpleXMLRPCServer
 import xmlrpc.client
 import sys
-import xmlrpc.client
 from threading import Thread 
 import multiprocessing
 import random
 
 key_value_store = dict()
 servers = dict()
-
+my_port = ""
 
 def connect_to_server(port):
     print ("### here ",port)
+    if(port == my_port):
+        return "Not a valid server port"
     proxy = xmlrpc.client.ServerProxy("http://localhost:"+port+"/")
     servers[port] = proxy
 
 def disconnect_server(port):
-    servers.pop(port,None)
+    if(port in servers):
+        servers.pop(port,None)
 
 def today():
     today = datetime.datetime.today()
     return xmlrpc.client.DateTime(today)
 
-
 def get(key):
-    serv = random.randint(0,len(servers))
-    val = servers.values()[serv].request("get "+str(key))
+    if len(servers) == 0:
+        return "No server is connected"
+    serv = random.randint(0,len(servers)-1)
+    li = list(servers.values())
+    val = li[serv].request("get "+str(key))
+    print(val)
     return val
 
 def put_value(key,value):
-    serv = random.randint(0,len(servers))
-    servers.values()[serv].request("put "+str(key)+" "+str(value))
+    if len(servers) == 0:
+        return "No server is connected"
+    serv = random.randint(0,len(servers)-1)
+    li = list(servers.values())
+    li[serv].request("put "+str(key)+" "+str(value))
 
 #parsing commands
 # valid commands
@@ -42,19 +50,20 @@ def put_value(key,value):
 
 def parse_req(command):
     words = command.rstrip().split(" ")
-    print(clients)
     if("put" in words[0]):
-        put_value(words[1],words[2])
-        return "Inserted the value"
+        val = put_value(words[1],words[2])
+        return ""+str(val)
     else:
-        return "Return: "+str(globals()[words[0]](words[1]))
+        return ""+str(globals()[words[0]](words[1]))
 
 def threaded_function(arg) :
     arg.serve_forever()
 
 def start(id,queue):
+    global my_port
     print ("here")
     try:
+        my_port = id
         port = int(id)
     except:
         print("Give appropriate port number")
@@ -74,6 +83,7 @@ def start(id,queue):
 if __name__== "__main__":
     try:
         port = int(sys.argv[1])
+        my_port = str(port)
     except:
         print("Give appropriate port number")
         sys.exit(-1)

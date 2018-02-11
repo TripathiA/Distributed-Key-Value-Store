@@ -14,10 +14,11 @@ import multiprocessing
 
 key_value_store = dict()
 servers = dict()
+my_port = ""
 
 def get(key,distribute=True):
     curr = -1
-    ret = -1
+    ret = [-1,-1]
     if key in key_value_store:
         curr = key_value_store[key][1]
         ret = key_value_store[key]
@@ -28,7 +29,7 @@ def get(key,distribute=True):
                 ret = val
                 key_value_store[key] = val
     print("val "+str(key_value_store))
-    return [ret,curr]
+    return ret
 
 def put_value(key,value):
     if(key in key_value_store):
@@ -37,6 +38,8 @@ def put_value(key,value):
         key_value_store[key] = [value,1]
 
 def connect_to_server(port):
+    if(port == my_port):
+        return "Not a valid port"
     print ("###",port)
     proxy = xmlrpc.client.ServerProxy("http://localhost:"+port+"/")
     servers[port] = proxy
@@ -75,15 +78,17 @@ def parse_req(command):
     words = command.rstrip().split(" ")
     print(servers)
     if("put" in words[0]):
-        put_value(words[1],words[2])
-        return "Inserted the value"
+        val = put_value(words[1],words[2])
+        return ""+str(val)
     else:
-        return "Return: "+str(globals()[words[0]](words[1]))
+        return ""+str(globals()[words[0]](words[1]))
 
 def threaded_function(arg) :
     arg.serve_forever()
 
 def start(id,queue):
+    global my_port
+    my_port == id
     print ("here")
     try:
         port = int(id)
@@ -107,6 +112,7 @@ def start(id,queue):
 if __name__== "__main__":
     try:
         port = int(sys.argv[1])
+        my_port = str(port)
     except:
         print("Give appropriate port number")
         sys.exit(-1)

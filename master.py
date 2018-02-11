@@ -47,16 +47,16 @@ def joinClient(clientId, serverId):
 	print("joinClient : "+ clientId + " "+ str(proc.pid))
 	proxy = xmlrpc.client.ServerProxy("http://localhost:"+clientId+"/")
 	clients[clientId] = proxy
-	clients[clientId].request("connect_to_server"+serverId)
+	clients[clientId].request("connect_to_server "+serverId)
 
 def breakConnection(id1,id2):
 	if id1 in clients:
-		clients[id1].request("disconnect_server"+id2)
+		clients[id1].request("disconnect_server "+id2)
 	elif id2 in clients:
-		clients[id2].request("disconnect_server"+id1)
+		clients[id2].request("disconnect_server "+id1)
 	else:
-		servers[id1].request("disconnect_server"+id2)
-		servers[id2].request("disconnect_server"+id1)
+		servers[id1].request("disconnect_server "+id2)
+		servers[id2].request("disconnect_server "+id1)
 
 
 joinServer("8000")
