@@ -1,6 +1,7 @@
 import datetime
 from xmlrpc.server import SimpleXMLRPCServer
 import xmlrpc.client
+import socket
 import sys
 from threading import Thread 
 import multiprocessing
@@ -15,10 +16,19 @@ def connect_to_server(port):
     if(port == my_port):
         return "Not a valid server port"
     proxy = xmlrpc.client.ServerProxy("http://localhost:"+port+"/")
-    servers[port] = proxy
+    try:
+        proxy._()   # Call a fictive method.
+    except xmlrpc.client.Fault:
+        servers[port] = proxy
+    except socket.error:
+        # Not connected ; socket error mean that the service is unreachable.
+        return 
+
+    
 
 def disconnect_server(port):
     if(port in servers):
+        print ("disconnect_server from client: ", port)
         servers.pop(port,None)
 
 def today():

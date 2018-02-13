@@ -45,6 +45,7 @@ def connect_to_server(port):
     servers[port] = proxy
 
 def disconnect_server(port):
+    print ("disconnect_server: ", port)
     servers.pop(port,None)
 
 def today():

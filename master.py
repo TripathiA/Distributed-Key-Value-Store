@@ -58,9 +58,28 @@ def breakConnection(id1,id2):
 		servers[id1].request("disconnect_server "+id2)
 		servers[id2].request("disconnect_server "+id1)
 
+def createConnection(id1,id2):
+	if id1 in clients:
+		clients[id1].request("connect_to_server "+id2)
+	elif id2 in clients:
+		clients[id2].request("connect_to_server "+id1)
+	else:
+		servers[id1].request("connect_to_server "+id2)
+		servers[id2].request("connect_to_server "+id1)
+
+def put(clientId,key,value):
+	clients[clientId].request("put "+str(key)+" "+str(value))
+
+def get(clientId,key):
+	val = clients[clientId].request("get "+str(key))
+	print (val)
 
 joinServer("8000")
 joinServer("8001")
 joinClient("8002","8000")
-#breakConnection("8002","8000")
+breakConnection("8002","8000")
+createConnection("8000","8002")
+createConnection("8002","8003")
+put("8002",2,5)
+get("8002",2)
 
