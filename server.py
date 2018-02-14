@@ -15,6 +15,8 @@ import multiprocessing
 key_value_store = dict()
 servers = dict()
 my_port = ""
+stabilized = False
+sent = False
 
 def get(key,distribute=True):
     curr = -1
@@ -55,8 +57,49 @@ def today():
 def get_kvstore():
     return key_value_store
 
+def get_stabilize_state():
+    return stabilized
+
+def set_stabilize_state(val):
+    stabilized = val
+
+def set_sent_state(val):
+    sent = val
+
+def get_sent_state():
+    return sent
+
 def set_kvstore(kvstore):
     key_value_store = kvstore
+
+def set_stab_kvstore(kvstore):
+    if stabilized:
+        return
+    stabilized = True
+    key_value_store = kvstore;
+    for s in servers:
+        servers[s].set_stab_kvstore(key_value_store)
+
+def stabilize(source = True):
+    if stabilized:
+        stabilized = False
+        return None
+    if sent:
+        return None
+    sent = True;
+    for s in servers:
+        kvstore = servers[s].stabilize(False)
+        if kvstore:
+            for key in kvstore:
+                if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
+                    key_value_store[key] = kvstore[key]
+    if source == False:
+        return key_value_store
+    else:
+        for s in servers:
+            servers[s].set_stab_kvstore(key_value_store)
+    stabilized = False
+    return key_value_store
 
 def stabilize():
     for s in servers:
@@ -66,7 +109,6 @@ def stabilize():
                 key_value_store[key] = kvstore[key]
     for s in servers:
         servers[s].set_kvstore(key_value_store)
-
 
 #parsing commands
 # valid commands
