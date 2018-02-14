@@ -101,14 +101,14 @@ def stabilize(source = True):
     stabilized = False
     return key_value_store
 
-def stabilize():
-    for s in servers:
-        kvstore = servers[s].get_kvstore()
-        for key in kvstore:
-            if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
-                key_value_store[key] = kvstore[key]
-    for s in servers:
-        servers[s].set_kvstore(key_value_store)
+# def stabilize():
+#     for s in servers:
+#         kvstore = servers[s].get_kvstore()
+#         for key in kvstore:
+#             if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
+#                 key_value_store[key] = kvstore[key]
+#     for s in servers:
+#         servers[s].set_kvstore(key_value_store)
 
 #parsing commands
 # valid commands
