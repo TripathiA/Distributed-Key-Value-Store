@@ -17,27 +17,52 @@ servers = dict()
 my_port = ""
 stabilized = False
 sent = False
+timestamp = 1
 
-def get(key,distribute=True):
+def get(key):
     curr = -1
-    ret = [-1,-1]
+    ret = [ERR_KEY, timestamp, my_port]
+    timestamp += 1
     if key in key_value_store:
-        curr = key_value_store[key][1]
         ret = key_value_store[key]
+    print("val "+ ret)
+    return ret
+
+def put_value(key,value, distribute = True):
+    # was this called from a client or another server?
+    if distribute:
+        # called from a client, so we must update the k-v store
+        # and tell our neighbours
+        timestamp += 1
+        key_value_store[key] = [value, timestamp, my_port]
+        
+        for s in servers:
+            servers[s].put[key, [value, timestamp, my_port], False]
+            
+        return key_value_store[key]
+    else:
+        # called from another server, so check timestamps before updating our k-v store
+        if key not in key_value_store or timestamp < value[1] or (timestamp == value[1] and my_port < value[2]):
+                # either a new key or a newer value for a key we already know about
+                # with ties broken by server id
+                key_value_store[key] = [value[0], value[1], value[2]]
+        # either way, advance our clock
+        timestamp = max(timestamp, value[1]) + 1
+        
+    '''
+    if(key in key_value_store) and timestamp > key_value_store[key][1]:
+        key_value_store[key] = [value, timestamp, my_port]
+    else:
+        key_value_store[key] = [value,timestamp, my_port]
+        
     if distribute:
         for s in servers:
-            val = servers[s].get(key,False)
+            val = servers[s].put(key, value, False)
             if(val[1] > curr):
                 ret = val
                 key_value_store[key] = val
-    print("val "+str(key_value_store))
-    return ret
-
-def put_value(key,value):
-    if(key in key_value_store):
-        key_value_store[key] = [value,key_value_store[key][1]+1]
-    else:
-        key_value_store[key] = [value,1]
+    return key_value_store[key]
+    '''
 
 def connect_to_server(port):
     if(port == my_port):
@@ -153,12 +178,14 @@ def start(id,queue):
 
 
 if __name__== "__main__":
+    print("starting server...")
     try:
         port = int(sys.argv[1])
         my_port = str(port)
     except:
         print("Give appropriate port number")
         sys.exit(-1)
+    print("setting up port...")
     server = SimpleXMLRPCServer(("localhost", port))
     print("Listening on port "+str(port))
     server.register_function(today, "today")

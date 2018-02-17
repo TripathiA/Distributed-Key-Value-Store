@@ -41,15 +41,49 @@ def get(key):
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
     val = li[serv].request("get "+str(key))
-    print(val)
-    return val
+    
+    if val[0] == "ERR_KEY":
+        # server thinks it doesn't have this key - did we ask for it before?
+        if key in key_value_store:
+            # we asked for it before so return "ERR_DEP"
+            print("ERR_DEP")
+            return "ERR_DEP"
+        else:
+            # we did not ask for it before, so we can return "ERR_KEY"
+            print("ERR_KEY")
+            return "ERR_KEY"
+    else:
+        # server had the key, did we previously know about this key?
+        if key in key_value_store:
+            # we knew about this key already, so check the timestamp
+            if key_value_store[key][1] > val[1]:
+                # timestamp from the server is less than the timestamp
+                # we previously knew, so return ERR_DEP
+                print("ERR_DEP")
+                return "ERR_DEP"
+            else:
+                # timestamp is newer, so update our memory of k-v pairs
+                # and return value from server
+                key_value_store[key] = val
+                print(val[0])
+                return val[0]
+        else:
+            # we learned about a new key, so update our memory of k-v pairs
+            # and return value from server
+            key_value_store[key] = val
+            print(val[0])
+            return val[0]
 
 def put_value(key,value):
     if len(servers) == 0:
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    li[serv].request("put "+str(key)+" "+str(value))
+    val = li[serv].request("put "+str(key)+" "+str(value))
+    
+    # remember the value and timestamp of what the server put
+    key_value_store[key] = val
+    
 
 #parsing commands
 # valid commands
