@@ -6,6 +6,7 @@ import sys
 from threading import Thread 
 import multiprocessing
 import random
+import json
 
 key_value_store = dict()
 servers = dict()
@@ -40,8 +41,9 @@ def get(key):
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    val = li[serv].request("get "+str(key))
-    
+    print("sevrers: "+str(li))
+    val = json.loads(li[serv].request("get "+str(key)))
+    print("from server: "+str(val))
     if val[0] == "ERR_KEY":
         # server thinks it doesn't have this key - did we ask for it before?
         if key in key_value_store:
@@ -71,7 +73,7 @@ def get(key):
             # we learned about a new key, so update our memory of k-v pairs
             # and return value from server
             key_value_store[key] = val
-            print(val[0])
+            print("val: "+val[0])
             return val[0]
 
 def put_value(key,value):
@@ -79,9 +81,10 @@ def put_value(key,value):
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    val = li[serv].request("put "+str(key)+" "+str(value))
+    val = json.loads(li[serv].request("put "+str(key)+" "+str(value)))
     
     # remember the value and timestamp of what the server put
+    print("value from server: "+str(val))
     key_value_store[key] = val
     
 

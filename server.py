@@ -3,9 +3,9 @@ from xmlrpc.server import SimpleXMLRPCServer
 import xmlrpc.client
 import sys
 import xmlrpc.client
-from threading import Thread 
+import threading 
 import multiprocessing
-
+import json
 
 #stabilize
 #try except if not key available
@@ -18,17 +18,21 @@ my_port = ""
 stabilized = False
 sent = False
 timestamp = 1
+Threads = dict()
+lock = threading.Lock()
+
 
 def get(key):
+    global timestamp
     curr = -1
-    ret = [ERR_KEY, timestamp, my_port]
+    ret = ["ERR_KEY", timestamp, my_port]
     timestamp += 1
     if key in key_value_store:
         ret = key_value_store[key]
-    print("val "+ ret)
     return ret
 
 def put_value(key,value, distribute = True):
+    global timestamp
     # was this called from a client or another server?
     if distribute:
         # called from a client, so we must update the k-v store
@@ -38,7 +42,6 @@ def put_value(key,value, distribute = True):
         
         for s in servers:
             servers[s].put[key, [value, timestamp, my_port], False]
-            
         return key_value_store[key]
     else:
         # called from another server, so check timestamps before updating our k-v store
@@ -48,6 +51,7 @@ def put_value(key,value, distribute = True):
                 key_value_store[key] = [value[0], value[1], value[2]]
         # either way, advance our clock
         timestamp = max(timestamp, value[1]) + 1
+        return key_value_store[key]
         
     '''
     if(key in key_value_store) and timestamp > key_value_store[key][1]:
@@ -105,25 +109,54 @@ def set_stab_kvstore(kvstore):
     for s in servers:
         servers[s].set_stab_kvstore(key_value_store)
 
+def acc_kvstore(args):
+    kvstore = servers[args[0]].stabilize(False)
+    if kvstore:
+        for key in kvstore:
+            if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
+                key_value_store[key] = kvstore[key]
+
+def dist_kvstore(args):
+    servers[args[0]].set_stab_kvstore(key_value_store)
+
 def stabilize(source = True):
+    global Threads, stabilized, sent
     if stabilized:
+        sent = False
         stabilized = False
         return None
-    if sent:
-        return None
-    sent = True;
+    lock.acquire()
+    try:
+        if sent:
+            return None
+        else:
+            sent = True;
+    finally:
+        lock.release()
+
     for s in servers:
-        kvstore = servers[s].stabilize(False)
-        if kvstore:
-            for key in kvstore:
-                if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
-                    key_value_store[key] = kvstore[key]
+        print("on: "+s)
+        t = threading.Thread(target=acc_kvstore,args=(s,))
+        Threads[s] = t
+        Threads[s].start()
+        # kvstore = servers[s].stabilize(False)
+        # if kvstore:
+        #     for key in kvstore:
+        #         if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
+        #             key_value_store[key] = kvstore[key]
+    for t in Threads:
+        Threads[t].join()
+    Threads.clear()
     if source == False:
         return key_value_store
     else:
         for s in servers:
-            servers[s].set_stab_kvstore(key_value_store)
+            Threads[s] = threading.Thread(target=dist_kvstore,args=(s,))
+            Threads[s].start()
+    for t in Threads:
+        Threads[t].join()
     stabilized = False
+    sent = False
     return key_value_store
 
 # def stabilize():
@@ -147,9 +180,12 @@ def parse_req(command):
     print(servers)
     if("put" in words[0]):
         val = put_value(words[1],words[2])
-        return ""+str(val)
+        val1 = json.dumps(val)
+        return val1
+    elif ("stabilize" in words[0]):
+        return json.dumps(stabilize())
     else:
-        return ""+str(globals()[words[0]](words[1]))
+        return json.dumps(globals()[words[0]](words[1]))
 
 def threaded_function(arg) :
     arg.serve_forever()
@@ -194,5 +230,6 @@ if __name__== "__main__":
     server.register_function(connect_to_server, "connect_to_server")
     server.register_function(disconnect_server, "disconnect_server")
     server.register_function(parse_req, "request")
+    server.register_function(stabilize,"stabilize")
     server.serve_forever()
 
