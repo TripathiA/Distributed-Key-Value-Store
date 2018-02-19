@@ -128,6 +128,7 @@ def stabilize(source = True):
     lock.acquire()
     try:
         if sent:
+            lock.release()
             return None
         else:
             sent = True;
