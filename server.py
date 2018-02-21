@@ -22,51 +22,36 @@ Threads = dict()
 lock = threading.Lock()
 
 
-def get(key):
+def get(key, client_timestamp):
     global timestamp
     curr = -1
     ret = ["ERR_KEY", timestamp, my_port]
-    timestamp += 1
+    timestamp = max(timestamp, int(client_timestamp)) + 1
     if key in key_value_store:
         ret = key_value_store[key]
     return ret
 
-def put_value(key,value, distribute = True):
+def put_value(key, value, client_timestamp):
     global timestamp
-    # was this called from a client or another server?
-    if distribute:
-        # called from a client, so we must update the k-v store
-        # and tell our neighbours
-        timestamp += 1
-        key_value_store[key] = [value, timestamp, my_port]
-        
-        for s in servers:
-            servers[s].put[key, [value, timestamp, my_port], False]
-        return key_value_store[key]
-    else:
-        # called from another server, so check timestamps before updating our k-v store
-        if key not in key_value_store or timestamp < value[1] or (timestamp == value[1] and my_port < value[2]):
-                # either a new key or a newer value for a key we already know about
-                # with ties broken by server id
-                key_value_store[key] = [value[0], value[1], value[2]]
-        # either way, advance our clock
-        timestamp = max(timestamp, value[1]) + 1
-        return key_value_store[key]
-        
-    '''
-    if(key in key_value_store) and timestamp > key_value_store[key][1]:
-        key_value_store[key] = [value, timestamp, my_port]
-    else:
-        key_value_store[key] = [value,timestamp, my_port]
-        
-    if distribute:
-        for s in servers:
-            val = servers[s].put(key, value, False)
-            if(val[1] > curr):
-                ret = val
-                key_value_store[key] = val
+    # called from a client, so we must update the k-v store
+    # and tell our neighbours
+    timestamp = max(timestamp, int(client_timestamp)) + 1
+    key_value_store[key] = [value, timestamp, my_port]
+    
+    for s in servers:
+        servers[s].put_gossip(key, value, timestamp, my_port)
+	# return value put to the client
     return key_value_store[key]
-    '''
+
+def put_gossip(key, value, other_timestamp, port):
+    global timestamp
+    # called from another server, so check timestamps before updating our k-v store
+    if key not in key_value_store or timestamp < other_timestamp or (timestamp == other_timestamp and my_port < port):
+        # either a new key or a newer value for a key we already know about
+        # with ties broken by server id
+        key_value_store[key] = [value, other_timestamp, port]
+    # either way, advance our clock
+    timestamp = max(timestamp, value[1]) + 1
 
 def connect_to_server(port):
     if(port == my_port):
@@ -180,13 +165,13 @@ def parse_req(command):
     words = command.rstrip().split(" ")
     print(servers)
     if("put" in words[0]):
-        val = put_value(words[1],words[2])
+        val = put_value(words[1],words[2],words[3])
         val1 = json.dumps(val)
         return val1
     elif ("stabilize" in words[0]):
         return json.dumps(stabilize())
     else:
-        return json.dumps(globals()[words[0]](words[1]))
+        return json.dumps(globals()[words[0]](words[1],words[2]))
 
 def threaded_function(arg) :
     arg.serve_forever()

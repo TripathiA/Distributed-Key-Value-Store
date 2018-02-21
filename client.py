@@ -11,6 +11,7 @@ import json
 key_value_store = dict()
 servers = dict()
 my_port = ""
+timestamp = 1
 
 def connect_to_server(port):
     print ("### here ",port)
@@ -37,13 +38,15 @@ def today():
     return xmlrpc.client.DateTime(today)
 
 def get(key):
+    global timestamp
     if len(servers) == 0:
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
     print("sevrers: "+str(li))
-    val = json.loads(li[serv].request("get "+str(key)))
+    val = json.loads(li[serv].request("get "+str(key) + " " + str(timestamp)))
     print("from server: "+str(val))
+	timestamp = max(timestamp, val[1]) + 1
     if val[0] == "ERR_KEY":
         # server thinks it doesn't have this key - did we ask for it before?
         if key in key_value_store:
@@ -58,7 +61,7 @@ def get(key):
         # server had the key, did we previously know about this key?
         if key in key_value_store:
             # we knew about this key already, so check the timestamp
-            if key_value_store[key][1] > val[1]:
+            if timestamp > val[1]:
                 # timestamp from the server is less than the timestamp
                 # we previously knew, so return ERR_DEP
                 print("ERR_DEP")
@@ -77,14 +80,16 @@ def get(key):
             return val[0]
 
 def put_value(key,value):
+    global timestamp
     if len(servers) == 0:
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    val = json.loads(li[serv].request("put "+str(key)+" "+str(value)))
+    val = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp))
     
     # remember the value and timestamp of what the server put
     print("value from server: "+str(val))
+	timestamp = max(timestamp, val[1]) + 1
     key_value_store[key] = val
     
 
