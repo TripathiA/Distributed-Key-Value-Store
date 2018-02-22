@@ -1,5 +1,5 @@
 import datetime
-from xmlrpc.server import SimpleXMLRPCServer
+from xmlrpc.server import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 import xmlrpc.client
 import socket
 import sys
@@ -7,11 +7,14 @@ from threading import Thread
 import multiprocessing
 import random
 import json
+import socketserver
 
 key_value_store = dict()
 servers = dict()
 my_port = ""
 timestamp = 1
+
+class AsyncXMLRPCServer(socketserver.ThreadingMixIn,SimpleXMLRPCServer): pass
 
 def connect_to_server(port):
     print ("### here ",port)
@@ -46,7 +49,7 @@ def get(key):
     print("sevrers: "+str(li))
     val = json.loads(li[serv].request("get "+str(key) + " " + str(timestamp)))
     print("from server: "+str(val))
-	timestamp = max(timestamp, val[1]) + 1
+    timestamp = max(timestamp, val[1]) + 1
     if val[0] == "ERR_KEY":
         # server thinks it doesn't have this key - did we ask for it before?
         if key in key_value_store:
@@ -85,11 +88,11 @@ def put_value(key,value):
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    val = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp))
+    val = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp)))
     
     # remember the value and timestamp of what the server put
     print("value from server: "+str(val))
-	timestamp = max(timestamp, val[1]) + 1
+    timestamp = max(timestamp, int(val[1])) + 1
     key_value_store[key] = val
     
 
@@ -120,7 +123,7 @@ def start(id,queue):
     except:
         print("Give appropriate port number")
         sys.exit(-1)
-    client = SimpleXMLRPCServer(("localhost", port))
+    client = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler)
     print("Listening on port "+str(port))
     client.register_function(today, "today")
     client.register_function(get, "get")
