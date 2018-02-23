@@ -1,0 +1,53 @@
+joinServer 8002
+joinServer 8003
+joinServer 8004
+joinServer 8005
+joinServer 8006
+joinClient 8021 8002
+joinClient 8031 8003
+joinClient 8041 8004
+joinClient 8051 8005
+joinClient 8061 8006
+put 8021 1 20
+put 8031 1 30
+put 8041 1 40
+put 8051 1 50
+put 8061 1 60
+put 8021 2 20
+put 8031 3 30
+put 8041 4 40
+put 8051 5 50
+put 8061 6 60
+stabilize
+printStore 8002
+breakConnection 8061 8006
+createConnection 8051 8006
+put 8051 1 7
+get 8051 1
+printStore 8005
+printStore 8006
+breakConnection 8002 8004
+breakConnection 8002 8005
+breakConnection 8006 8003
+breakConnection 8006 8004
+breakConnection 8003 8005
+put 8021 12 20
+put 8031 13 30
+put 8041 14 40
+put 8051 15 50
+put 8061 16 60
+createConnection 8051 8003
+put 8051 17 100
+get 8051 17
+printStore 8003
+printStore 8005
+printStore 8006
+stabilize
+printStore 8002
+printStore 8003
+printStore 8004
+printStore 8005
+printStore 8006
+killServer 8006
+put 8051 18 200
+get 8051 18

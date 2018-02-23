@@ -42,24 +42,20 @@ def put_gossip(key, value, other_timestamp, port):
         # with ties broken by server id
         key_value_store[key] = [value, other_timestamp, port]
     # either way, advance our clock
-    timestamp = max(timestamp, int(value[1])) + 1
-    #print("hereeee"+port)
-    return "hi"
+    timestamp = max(timestamp, int(other_timestamp)) + 1
+    return "Gossiped"
     
 
 def put_value(key, value, client_timestamp):
     global timestamp
     # called from a client, so we must update the k-v store
     # and tell our neighbours
-    print ("put_vaue: "+str(my_port))
     timestamp = max(timestamp, int(client_timestamp)) + 1
     key_value_store[key] = [value, timestamp, my_port]
-    
     for s in servers:
-        print("calling: "+s)
         servers[s].put_gossip(key, value, int(timestamp), my_port)
-        #print("hereeee#"+my_port)
 	# return value put to the client
+    #print("returning "+str(key_value_store[key]))
     return key_value_store[key]
 
 def connect_to_server(port):
@@ -72,6 +68,7 @@ def connect_to_server(port):
 def disconnect_server(port):
     print ("disconnect_server: ", port)
     servers.pop(port,None)
+    return "Disconnected "+port
 
 def today():
     today = datetime.datetime.today()
@@ -96,21 +93,18 @@ def set_kvstore(kvstore):
     key_value_store = kvstore
 
 def set_stab_kvstore(kvstore):
-    print ("set_stab_kvstore"+ my_port )
     global stabilized
     global key_value_store
     if stabilized:
         return ""
     stabilized = True
     key_value_store = kvstore;
-    print (key_value_store)
     for s in servers:
         servers[s].set_stab_kvstore(key_value_store)
-    return ""
+    return "Set the Kvstore"
 
 def acc_kvstore(port,calling_ports):    
     calling_ports.append(my_port)
-    print("acc_kv: "+my_port+" "+port+" "+str(calling_ports))
     kvstore = servers[port].stabilize(False,calling_ports)
     if kvstore:
         for key in kvstore:
@@ -119,23 +113,19 @@ def acc_kvstore(port,calling_ports):
     return ""
 
 def dist_kvstore(args):
-    print("dist_kvstore "+ args+ " "+ my_port)
     servers[args].set_stab_kvstore(key_value_store)
     return ""
 
 def stabilize(source = True,calling_ports=[my_port]):
     global Threads, stabilized, sent
-    print("var val: "+str(my_port)+" "+str(source)+" "+str(sent)+" "+str(stabilized)+" "+str(calling_ports))
+    # print("var val: "+str(my_port)+" "+str(source)+" "+str(sent)+" "+str(stabilized)+" "+str(calling_ports))
     if stabilized:
         sent = False
         stabilized = False
-        print("stabilize : already stabilized"+my_port)
-        print (key_value_store)
         return ""
     lock.acquire()
     if sent:
         lock.release()
-        print("return none: "+my_port)
         return ""
     else:
         sent = True;
@@ -143,11 +133,11 @@ def stabilize(source = True,calling_ports=[my_port]):
 
     for s in servers:
         if(s not in calling_ports):
-            print("on: "+my_port+" "+s)
+            # print("on: "+my_port+" "+s)
             t = threading.Thread(target=acc_kvstore,args=(s,calling_ports))
             Threads[s] = t
             Threads[s].start()
-            print("thread spawned: "+s)
+            # print("thread spawned: "+s)
         # kvstore = servers[s].stabilize(False)
         # if kvstore:
         #     for key in kvstore:
@@ -156,7 +146,7 @@ def stabilize(source = True,calling_ports=[my_port]):
     for t in Threads:
         Threads[t].join()
     Threads.clear()
-    print ("informed all neighbours "+str(my_port))
+    # print ("informed all neighbours "+str(my_port))
     if source == False:
         return key_value_store
     else:
@@ -187,15 +177,10 @@ def stabilize(source = True,calling_ports=[my_port]):
 # - connect_to_server server_port
 # - disconnect_server server_port
 
-def call_test(id):
-    for s in servers:
-        print("hello "+my_port+" "+id)
-        servers[s].call_test(my_port)
-    return "bdbkvs"
 
 def parse_req(command):
     words = command.rstrip().split(" ")
-    print(servers)
+    # print(servers)
     if("put" in words[0]):
         val = put_value(words[1],words[2],words[3])
         #print("in: "+str(val))
@@ -217,7 +202,6 @@ def threaded_function(arg) :
 def start(id,queue):
     global my_port
     my_port = id
-    print ("here")
     try:
         port = int(id)
     except:
@@ -236,9 +220,6 @@ def start(id,queue):
     server.register_function(stabilize,"stabilize")
     server.register_function(parse_req, "request")
     server.register_function(set_stab_kvstore,"set_stab_kvstore")
-    server.register_function(call_test, "call_test")
-    # thread = Thread(target = threaded_function, args= (server,))
-    # thread.start()
     queue.put("Manu")
     server.serve_forever()
 

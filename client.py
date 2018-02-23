@@ -17,7 +17,6 @@ timestamp = 1
 class AsyncXMLRPCServer(socketserver.ThreadingMixIn,SimpleXMLRPCServer): pass
 
 def connect_to_server(port):
-    print ("### here ",port)
     if(port == my_port):
         return "Not a valid server port"
     proxy = xmlrpc.client.ServerProxy("http://localhost:"+port+"/")
@@ -35,6 +34,7 @@ def disconnect_server(port):
     if(port in servers):
         print ("disconnect_server from client: ", port)
         servers.pop(port,None)
+    return ""
 
 def today():
     today = datetime.datetime.today()
@@ -46,40 +46,37 @@ def get(key):
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    print("sevrers: "+str(li))
     val = json.loads(li[serv].request("get "+str(key) + " " + str(timestamp)))
-    print("from server: "+str(val))
+    print("getting value from server: "+str(li[serv]))
+    print("got: "+str(val))
+    old_timestamp = timestamp
     timestamp = max(timestamp, val[1]) + 1
     if val[0] == "ERR_KEY":
         # server thinks it doesn't have this key - did we ask for it before?
         if key in key_value_store:
             # we asked for it before so return "ERR_DEP"
-            print("ERR_DEP")
             return "ERR_DEP"
         else:
             # we did not ask for it before, so we can return "ERR_KEY"
-            print("ERR_KEY")
             return "ERR_KEY"
     else:
         # server had the key, did we previously know about this key?
         if key in key_value_store:
             # we knew about this key already, so check the timestamp
-            if timestamp > val[1]:
+            if key_value_store[key][1] > val[1]:
                 # timestamp from the server is less than the timestamp
                 # we previously knew, so return ERR_DEP
-                print("ERR_DEP")
                 return "ERR_DEP"
             else:
                 # timestamp is newer, so update our memory of k-v pairs
                 # and return value from server
                 key_value_store[key] = val
-                print(val[0])
                 return val[0]
         else:
             # we learned about a new key, so update our memory of k-v pairs
             # and return value from server
             key_value_store[key] = val
-            print("val: "+val[0])
+            # print("val: "+val[0])
             return val[0]
 
 def put_value(key,value):
@@ -89,9 +86,9 @@ def put_value(key,value):
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
     val = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp)))
-    
+    print("putting value to server: "+str(li[serv]))
     # remember the value and timestamp of what the server put
-    print("value from server: "+str(val))
+    # print("value from server: "+str(val))
     timestamp = max(timestamp, int(val[1])) + 1
     key_value_store[key] = val
     
@@ -116,7 +113,6 @@ def threaded_function(arg) :
 
 def start(id,queue):
     global my_port
-    print ("here")
     try:
         my_port = id
         port = int(id)

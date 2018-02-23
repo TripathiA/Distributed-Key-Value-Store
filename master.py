@@ -8,6 +8,7 @@ from xmlrpc.server import SimpleXMLRPCServer
 import xmlrpc.client
 import time
 import multiprocessing 
+import json
 
 servers = dict()
 server_pid = dict()
@@ -20,7 +21,7 @@ def joinServer(id):
 	proc.start()
 	#proc = subprocess.Popen(["python3", "server.py",id,queue])
 	obj = queue.get()
-	print (obj)
+	# print (obj)
 	#proc.wait()
 	server_pid[id] = proc.pid
 	print("joinServer : "+id + " "+ str(proc.pid))
@@ -28,13 +29,17 @@ def joinServer(id):
 	servers[id] = proxy
 	#time.sleep(1)
 	for s in servers:
-		print(s,id,(s != id),servers[s])
+		# print(s,id,(s != id),servers[s])
 		if(s != id):
 			servers[s].request("connect_to_server "+id)
 			servers[id].request("connect_to_server "+s)
-	print("returning")
 
 def killServer(id):
+	for s in servers:
+		servers[s].disconnect_server(id)
+	for c in clients:
+		clients[c].disconnect_server(id)
+	print("Disconnected from all the servers")
 	os.kill(server_pid[id], signal.SIGKILL)
 	print ("killServer : "+id+" "+str(server_pid[id]))
 
@@ -68,11 +73,11 @@ def createConnection(id1,id2):
 		servers[id2].request("connect_to_server "+id1)
 
 def put(clientId,key,value):
-	print ("put"+str(key)+" "+str(value)+ " "+str(clientId))
+	print ("put "+str(key)+" "+str(value)+ " "+str(clientId))
 	clients[clientId].request("put "+str(key)+" "+str(value))
 
 def get(clientId,key):
-	print ("get"+str(key)+" "+str(clientId))
+	print ("get "+str(key)+" "+str(clientId))
 	val = clients[clientId].request("get "+str(key))
 	print ("get of" + str(key) + " returns "+str(val))
 
@@ -83,44 +88,38 @@ def stabilize():
 		print("stabilized = "+s)
 
 def printStore(serverId):
-	kvstore = servers[serverId].request("get_kvstore")
-	print(kvstore)
+	print("Kvstore for "+serverId)
+	kvstore = json.loads(servers[serverId].request("get_kvstore"))
+	for k in kvstore:
+		print(k+" : "+str(kvstore[k][0]))
+	# print(kvstore)
 
 def call():
 	servers["8000"].call_test("8000")
 
-joinServer("8000")
-print("1")
-joinServer("8001")
-print("11")
-joinServer("8002")
-print("111")
-joinClient("8010","8000")
-print("1111")
-joinClient("8011","8001")
-print("11111")
-joinClient("8012","8002")
-print("2")
-breakConnection("8000","8002")
-print("3")
-breakConnection("8001","8002")
-put("8010",1,10)
-print("4")
-put("8011",1,11)
-print("5")
-put("8012",1,12)
-print("6")
-put("8010",2,20)
-print("7")
-stabilize()
-print("8")
-print("PRINTSTORE 8000")
-printStore("8000")
-print("9")
-printStore("8001")
-print("10")
-printStore("8002")
-print("DONE")
+def parse_req(command):
+    words = command.rstrip().split(" ")
+    if (len(words) == 4):
+        return json.dumps(globals()[words[0]](words[1],words[2],words[3]))
+    elif (len(words) == 3):
+        return json.dumps(globals()[words[0]](words[1],words[2]))
+    elif (len(words) == 2):
+        return json.dumps(globals()[words[0]](words[1]))
+    else:
+    	return json.dumps(globals()[words[0]]())
+
+req = "inp"
+while(req != ""):
+	try:
+	    req = input("")
+	except EOFError:
+		break
+	ret = parse_req(req)
+	    #ret = proxy.request(req + " " + str(timestamp))
+	print(ret)
+
+#os._exit(0)
+	    #sys.exit(-1)
 # breakConnection("8002","8000")
 # createConnection("8000","8002")
 # put("8002",2,5)
