@@ -43,7 +43,7 @@ def put_gossip(key, value, other_timestamp, port):
         key_value_store[key] = [value, other_timestamp, port]
     # either way, advance our clock
     timestamp = max(timestamp, int(value[1])) + 1
-    print("hereeee"+port)
+    #print("hereeee"+port)
     return "hi"
     
 
@@ -51,20 +51,21 @@ def put_value(key, value, client_timestamp):
     global timestamp
     # called from a client, so we must update the k-v store
     # and tell our neighbours
+    print ("put_vaue: "+str(my_port))
     timestamp = max(timestamp, int(client_timestamp)) + 1
     key_value_store[key] = [value, timestamp, my_port]
     
     for s in servers:
         print("calling: "+s)
         servers[s].put_gossip(key, value, int(timestamp), my_port)
-        print("hereeee#"+my_port)
+        #print("hereeee#"+my_port)
 	# return value put to the client
     return key_value_store[key]
 
 def connect_to_server(port):
     if(port == my_port):
         return "Not a valid port"
-    print ("###",port)
+    #print ("###",port)
     proxy = xmlrpc.client.ServerProxy("http://localhost:"+port+"/")
     servers[port] = proxy
 
@@ -95,11 +96,14 @@ def set_kvstore(kvstore):
     key_value_store = kvstore
 
 def set_stab_kvstore(kvstore):
+    print ("set_stab_kvstore"+ my_port )
     global stabilized
+    global key_value_store
     if stabilized:
         return ""
     stabilized = True
     key_value_store = kvstore;
+    print (key_value_store)
     for s in servers:
         servers[s].set_stab_kvstore(key_value_store)
     return ""
@@ -115,6 +119,7 @@ def acc_kvstore(port,calling_ports):
     return ""
 
 def dist_kvstore(args):
+    print("dist_kvstore "+ args+ " "+ my_port)
     servers[args].set_stab_kvstore(key_value_store)
     return ""
 
@@ -124,7 +129,8 @@ def stabilize(source = True,calling_ports=[my_port]):
     if stabilized:
         sent = False
         stabilized = False
-        print("return none s: "+my_port)
+        print("stabilize : already stabilized"+my_port)
+        print (key_value_store)
         return ""
     lock.acquire()
     if sent:
@@ -150,9 +156,11 @@ def stabilize(source = True,calling_ports=[my_port]):
     for t in Threads:
         Threads[t].join()
     Threads.clear()
+    print ("informed all neighbours "+str(my_port))
     if source == False:
         return key_value_store
     else:
+        stabilized = True  #Manu - changed
         for s in servers:
             if(s not in calling_ports):
                 Threads[s] = threading.Thread(target=dist_kvstore,args=(s,))
@@ -190,7 +198,7 @@ def parse_req(command):
     print(servers)
     if("put" in words[0]):
         val = put_value(words[1],words[2],words[3])
-        print("in: "+str(val))
+        #print("in: "+str(val))
         val1 = json.dumps(val)
         return val1
     # elif ("stabilize" in words[0]):
@@ -215,7 +223,7 @@ def start(id,queue):
     except:
         print("Give appropriate port number")
         sys.exit(-1)
-    server = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler)
+    server = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler, logRequests=False)
     #server = SimpleXMLRPCServer(("localhost", port))
     print("Listening on port "+str(port))
     server.register_multicall_functions()
@@ -237,7 +245,7 @@ def start(id,queue):
 
 if __name__== "__main__":
     id = sys.argv[1]
-    global my_port
+    #global my_port
     my_port = id
     print ("here")
     try:
@@ -245,7 +253,7 @@ if __name__== "__main__":
     except:
         print("Give appropriate port number")
         sys.exit(-1)
-    server = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler)
+    server = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler, logRequests=False)
     #server = SimpleXMLRPCServer(("localhost", port))
     print("Listening on port "+str(port))
     server.register_multicall_functions()

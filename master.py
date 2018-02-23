@@ -68,11 +68,13 @@ def createConnection(id1,id2):
 		servers[id2].request("connect_to_server "+id1)
 
 def put(clientId,key,value):
+	print ("put"+str(key)+" "+str(value)+ " "+str(clientId))
 	clients[clientId].request("put "+str(key)+" "+str(value))
 
 def get(clientId,key):
+	print ("get"+str(key)+" "+str(clientId))
 	val = clients[clientId].request("get "+str(key))
-	print (val)
+	print ("get of" + str(key) + " returns "+str(val))
 
 def stabilize():
 	for s in servers:
@@ -101,7 +103,7 @@ joinClient("8012","8002")
 print("2")
 breakConnection("8000","8002")
 print("3")
-#breakConnection("8001","8002")
+breakConnection("8001","8002")
 put("8010",1,10)
 print("4")
 put("8011",1,11)

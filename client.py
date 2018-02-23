@@ -123,7 +123,7 @@ def start(id,queue):
     except:
         print("Give appropriate port number")
         sys.exit(-1)
-    client = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler)
+    client = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler, logRequests=False)
     print("Listening on port "+str(port))
     client.register_function(today, "today")
     client.register_function(get, "get")
