@@ -20,6 +20,10 @@ put 8051 5 50
 put 8061 6 60
 stabilize
 printStore 8002
+printStore 8003
+printStore 8004
+printStore 8005
+printStore 8006
 breakConnection 8061 8006
 createConnection 8051 8006
 put 8051 1 7
@@ -51,3 +55,27 @@ printStore 8006
 killServer 8006
 put 8051 18 200
 get 8051 18
+breakConnection 8003 8004
+put 8051 17 70
+get 8051 17
+get 8051 17
+printStore 8003
+printStore 8005
+stabilize
+printStore 8002
+printStore 8003
+printStore 8004
+printStore 8005
+breakConnection 8021 8002
+createConnection 8021 8003
+put 8021 18 80
+put 8031 18 90
+get 8021 18
+get 8031 18
+put 8021 14 100
+createConnection 8003 8004
+stabilize
+printStore 8002
+printStore 8003
+printStore 8004
+printStore 8005

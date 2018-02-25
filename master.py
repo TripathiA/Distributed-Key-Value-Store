@@ -40,6 +40,7 @@ def killServer(id):
 	for c in clients:
 		clients[c].disconnect_server(id)
 	print("Disconnected from all the servers")
+	servers.pop(id)
 	os.kill(server_pid[id], signal.SIGKILL)
 	print ("killServer : "+id+" "+str(server_pid[id]))
 
@@ -109,11 +110,11 @@ def parse_req(command):
     	return json.dumps(globals()[words[0]]())
 
 req = "inp"
-while(req != ""):
+while(req != "\n"):
 	try:
 	    req = input("")
 	except EOFError:
-		break
+		sys.exit(0)
 	ret = parse_req(req)
 	    #ret = proxy.request(req + " " + str(timestamp))
 	print(ret)
