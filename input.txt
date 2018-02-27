@@ -79,3 +79,13 @@ printStore 8002
 printStore 8003
 printStore 8004
 printStore 8005
+joinServer 8007
+breakConnection 8007 8005
+joinClient 8071 8007
+put 8071 18 100
+get 8071 18
+breakConnection 8007 8071
+createConnection 8071 8005
+get 8071 18
+stabilize
+printStore 8007

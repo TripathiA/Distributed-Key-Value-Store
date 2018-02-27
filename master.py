@@ -13,6 +13,7 @@ import json
 servers = dict()
 server_pid = dict()
 clients = dict()
+client_pid = dict()
 
 def joinServer(id):
 	#server.start(id)
@@ -43,11 +44,13 @@ def killServer(id):
 	servers.pop(id)
 	os.kill(server_pid[id], signal.SIGKILL)
 	print ("killServer : "+id+" "+str(server_pid[id]))
+	server_pid.pop(id)
 
 def joinClient(clientId, serverId):
 	queue = multiprocessing.Queue()
 	proc = multiprocessing.Process(target=client.start, args=(clientId,queue,))
 	proc.start()
+	client_pid[clientId] = proc.pid
 	obj = queue.get()
 	print (obj)
 	print("joinClient : "+ clientId + " "+ str(proc.pid))
@@ -110,19 +113,18 @@ def parse_req(command):
     	return json.dumps(globals()[words[0]]())
 
 req = "inp"
-while(req != "\n"):
+while(req != ""):
 	try:
 	    req = input("")
 	except EOFError:
-		sys.exit(0)
+		break
 	ret = parse_req(req)
 	    #ret = proxy.request(req + " " + str(timestamp))
 	print(ret)
 
-#os._exit(0)
-	    #sys.exit(-1)
-# breakConnection("8002","8000")
-# createConnection("8000","8002")
-# put("8002",2,5)
-# get("8002",2)
+for id in server_pid:
+	os.kill(server_pid[id], signal.SIGKILL)
+
+for id in client_pid:
+	os.kill(client_pid[id], signal.SIGKILL)
 

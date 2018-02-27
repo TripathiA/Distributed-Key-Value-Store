@@ -58,12 +58,19 @@ def put_value(key, value, client_timestamp):
     #print("returning "+str(key_value_store[key]))
     return key_value_store[key]
 
+def get_timestamp():
+    global timestamp
+    return timestamp
+
 def connect_to_server(port):
     if(port == my_port):
         return "Not a valid port"
     #print ("###",port)
     proxy = xmlrpc.client.ServerProxy("http://localhost:"+port+"/")
     servers[port] = proxy
+    global timestamp
+    other_timestamp = proxy.get_timestamp()
+    timestamp = max(other_timestamp, timestamp) + 1
 
 def disconnect_server(port):
     print ("disconnect_server: ", port)
@@ -220,6 +227,7 @@ def start(id,queue):
     server.register_function(stabilize,"stabilize")
     server.register_function(parse_req, "request")
     server.register_function(set_stab_kvstore,"set_stab_kvstore")
+    server.register_function(get_timestamp, "get_timestamp")
     queue.put("Manu")
     server.serve_forever()
 
@@ -248,6 +256,7 @@ if __name__== "__main__":
     server.register_function(parse_req, "request")
     server.register_function(set_stab_kvstore,"set_stab_kvstore")
     server.register_function(call_test, "call_test")
+    server.register_function(get_timestamp, "get_timestamp")
     # thread = Thread(target = threaded_function, args= (server,))
     # thread.start()
     #queue.put("Manu")
