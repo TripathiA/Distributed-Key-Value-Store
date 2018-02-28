@@ -19,6 +19,8 @@ where input.txt is a sequence of newline delineated commands from standard input
 An example command:
 
     put 8021 18 80
+    
+This tells a client with ID 8021 to request a put of value 80 in key 18.
 
 ## Testing:
 
