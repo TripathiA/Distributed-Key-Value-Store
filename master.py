@@ -25,7 +25,7 @@ def joinServer(id):
 	# print (obj)
 	#proc.wait()
 	server_pid[id] = proc.pid
-	print("joinServer : "+id + " "+ str(proc.pid))
+	#print("joinServer : "+id + " "+ str(proc.pid))
 	proxy = xmlrpc.client.ServerProxy("http://localhost:"+id+"/")
 	servers[id] = proxy
 	#time.sleep(1)
@@ -40,10 +40,10 @@ def killServer(id):
 		servers[s].disconnect_server(id)
 	for c in clients:
 		clients[c].disconnect_server(id)
-	print("Disconnected from all the servers")
+	#print("Disconnected from all the servers")
 	servers.pop(id)
 	os.kill(server_pid[id], signal.SIGKILL)
-	print ("killServer : "+id+" "+str(server_pid[id]))
+	#print ("killServer : "+id+" "+str(server_pid[id]))
 	server_pid.pop(id)
 
 def joinClient(clientId, serverId):
@@ -52,8 +52,8 @@ def joinClient(clientId, serverId):
 	proc.start()
 	client_pid[clientId] = proc.pid
 	obj = queue.get()
-	print (obj)
-	print("joinClient : "+ clientId + " "+ str(proc.pid))
+	#print (obj)
+	#print("joinClient : "+ clientId + " "+ str(proc.pid))
 	proxy = xmlrpc.client.ServerProxy("http://localhost:"+clientId+"/")
 	clients[clientId] = proxy
 	clients[clientId].request("connect_to_server "+serverId)
@@ -77,19 +77,20 @@ def createConnection(id1,id2):
 		servers[id2].request("connect_to_server "+id1)
 
 def put(clientId,key,value):
-	print ("put "+str(key)+" "+str(value)+ " "+str(clientId))
+	#print ("put "+str(key)+" "+str(value)+ " "+str(clientId))
 	clients[clientId].request("put "+str(key)+" "+str(value))
 
 def get(clientId,key):
-	print ("get "+str(key)+" "+str(clientId))
+	#print ("get "+str(key)+" "+str(clientId))
 	val = clients[clientId].request("get "+str(key))
-	print ("get of" + str(key) + " returns "+str(val))
+	#print ("get of " + str(key) + " returns "+str(val))
+	return val
 
 def stabilize():
 	for s in servers:
-		print("do stabilize = "+s)
+		#print("do stabilize = "+s)
 		servers[s].request("stabilize")
-		print("stabilized = "+s)
+		#print("stabilized = "+s)
 
 def printStore(serverId):
 	print("Kvstore for "+serverId)
@@ -120,7 +121,11 @@ while(req != ""):
 		break
 	ret = parse_req(req)
 	    #ret = proxy.request(req + " " + str(timestamp))
-	print(ret)
+	print(req, end = "")
+	if ret and ret != "null":
+		print(": " +str(ret))
+	else:
+		print()
 
 for id in server_pid:
 	os.kill(server_pid[id], signal.SIGKILL)

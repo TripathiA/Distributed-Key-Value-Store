@@ -73,7 +73,6 @@ def connect_to_server(port):
     timestamp = max(other_timestamp, timestamp)
 
 def disconnect_server(port):
-    print ("disconnect_server: ", port)
     servers.pop(port,None)
     return "Disconnected "+port
 
@@ -228,7 +227,7 @@ def start(id,queue):
     server.register_function(parse_req, "request")
     server.register_function(set_stab_kvstore,"set_stab_kvstore")
     server.register_function(get_timestamp, "get_timestamp")
-    queue.put("Manu")
+    queue.put("Done")
     server.serve_forever()
 
 

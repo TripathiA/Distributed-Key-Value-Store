@@ -32,7 +32,7 @@ def connect_to_server(port):
 
 def disconnect_server(port):
     if(port in servers):
-        print ("disconnect_server from client: ", port)
+        #print ("disconnect_server from client: ", port)
         servers.pop(port,None)
     return ""
 
@@ -47,8 +47,8 @@ def get(key):
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
     val = json.loads(li[serv].request("get "+str(key) + " " + str(timestamp)))
-    print("getting value from server: "+str(li[serv]))
-    print("got: "+str(val))
+    #print("getting value from server: "+str(li[serv]))
+    #print("got: "+str(val))
     old_timestamp = timestamp
     timestamp = max(timestamp, val[1]) + 1
     if val[0] == "ERR_KEY":
@@ -86,7 +86,7 @@ def put_value(key,value):
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
     val = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp)))
-    print("putting value to server: "+str(li[serv]))
+    #print("putting value to server: "+str(li[serv]))
     # remember the value and timestamp of what the server put
     # print("value from server: "+str(val))
     timestamp = max(timestamp, int(val[1])) + 1
@@ -127,7 +127,7 @@ def start(id,queue):
     client.register_function(connect_to_server, "connect_to_server")
     client.register_function(disconnect_server, "disconnect_server")
     client.register_function(parse_req, "request")
-    queue.put("Manu")
+    queue.put("Done")
     client.serve_forever()
 
     
