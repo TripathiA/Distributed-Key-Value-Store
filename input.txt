@@ -89,3 +89,12 @@ createConnection 8071 8005
 get 8071 18
 stabilize
 printStore 8007
+joinClient 8081 8007
+put 8081 20 20
+put 8071 20 21
+breakConnection 8081 8007
+breakConnection 8071 8005
+createConnection 8081 8005
+createConnection 8071 8007
+get 8071 20
+get 8081 20

@@ -70,7 +70,7 @@ def connect_to_server(port):
     servers[port] = proxy
     global timestamp
     other_timestamp = proxy.get_timestamp()
-    timestamp = max(other_timestamp, timestamp) + 1
+    timestamp = max(other_timestamp, timestamp)
 
 def disconnect_server(port):
     print ("disconnect_server: ", port)
