@@ -32,7 +32,7 @@ def get(key, client_timestamp):
     timestamp = max(timestamp, int(client_timestamp)) + 1
     if key in key_value_store:
         ret = key_value_store[key]
-    return ret
+    return ret, timestamp
 
 def put_gossip(key, value, other_timestamp, port):
     global timestamp
@@ -56,7 +56,7 @@ def put_value(key, value, client_timestamp):
         servers[s].put_gossip(key, value, int(timestamp), my_port)
 	# return value put to the client
     #print("returning "+str(key_value_store[key]))
-    return key_value_store[key]
+    return key_value_store[key], timestamp
 
 def get_timestamp():
     global timestamp
@@ -215,7 +215,7 @@ def start(id,queue):
         sys.exit(-1)
     server = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler, logRequests=False)
     #server = SimpleXMLRPCServer(("localhost", port))
-    print("Listening on port "+str(port))
+    #print("Listening on port "+str(port))
     server.register_multicall_functions()
     server.register_function(today, "today")
     server.register_function(get, "get")

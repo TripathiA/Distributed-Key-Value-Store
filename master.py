@@ -123,7 +123,7 @@ while(req != ""):
 	    #ret = proxy.request(req + " " + str(timestamp))
 	print(req, end = "")
 	if ret and ret != "null":
-		print(": " +str(ret))
+		print(": " +ret)
 	else:
 		print()
 

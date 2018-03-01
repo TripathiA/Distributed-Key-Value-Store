@@ -46,11 +46,11 @@ def get(key):
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    val = json.loads(li[serv].request("get "+str(key) + " " + str(timestamp)))
+    val, server_timestamp = json.loads(li[serv].request("get "+str(key) + " " + str(timestamp)))
     #print("getting value from server: "+str(li[serv]))
     #print("got: "+str(val))
     old_timestamp = timestamp
-    timestamp = max(timestamp, val[1]) + 1
+    timestamp = max(timestamp, server_timestamp) + 1
     if val[0] == "ERR_KEY":
         # server thinks it doesn't have this key - did we ask for it before?
         if key in key_value_store:
@@ -63,7 +63,7 @@ def get(key):
         # server had the key, did we previously know about this key?
         if key in key_value_store:
             # we knew about this key already, so check the timestamp
-            if key_value_store[key][1] > val[1]:
+            if key_value_store[key][1] > val[1] or (key_value_store[key][1] == val[1] and key_value_store[key][2] > val[2]):
                 # timestamp from the server is less than the timestamp
                 # we previously knew, so return ERR_DEP
                 return "ERR_DEP"
@@ -85,11 +85,11 @@ def put_value(key,value):
         return "No server is connected"
     serv = random.randint(0,len(servers)-1)
     li = list(servers.values())
-    val = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp)))
+    val, server_timestamp = json.loads(li[serv].request("put "+str(key)+" "+str(value) + " " + str(timestamp)))
     #print("putting value to server: "+str(li[serv]))
     # remember the value and timestamp of what the server put
     # print("value from server: "+str(val))
-    timestamp = max(timestamp, int(val[1])) + 1
+    timestamp = max(timestamp, int(server_timestamp)) + 1
     key_value_store[key] = val
     
 
@@ -120,7 +120,7 @@ def start(id,queue):
         print("Give appropriate port number")
         sys.exit(-1)
     client = AsyncXMLRPCServer(("localhost", port),SimpleXMLRPCRequestHandler, logRequests=False)
-    print("Listening on port "+str(port))
+    #print("Listening on port "+str(port))
     client.register_function(today, "today")
     client.register_function(get, "get")
     client.register_function(put_value, "put_value")
