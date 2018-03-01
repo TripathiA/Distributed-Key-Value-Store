@@ -37,12 +37,12 @@ def get(key, client_timestamp):
 def put_gossip(key, value, other_timestamp, port):
     global timestamp
     # called from another server, so check timestamps before updating our k-v store
-    if key not in key_value_store or timestamp < other_timestamp or (timestamp == other_timestamp and my_port < port):
+    timestamp = max(timestamp, int(other_timestamp)) + 1
+    if key not in key_value_store or key_value_store[key][1] < other_timestamp or (key_value_store[key][1] == other_timestamp and my_port < port):
         # either a new key or a newer value for a key we already know about
         # with ties broken by server id
         key_value_store[key] = [value, other_timestamp, port]
     # either way, advance our clock
-    timestamp = max(timestamp, int(other_timestamp)) + 1
     return "Gossiped"
     
 
