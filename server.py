@@ -87,9 +87,11 @@ def get_stabilize_state():
     return stabilized
 
 def set_stabilize_state(val):
+    global stabilized
     stabilized = val
 
 def set_sent_state(val):
+    global sent
     sent = val
 
 def get_sent_state():

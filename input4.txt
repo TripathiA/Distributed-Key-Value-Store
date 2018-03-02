@@ -106,3 +106,9 @@ get 81 20
 joinServer 8
 stabilize
 printStore 8
+joinServer 0
+joinClient 11 0
+put 11 18 4
+stabilize
+printStore 0
+printStore 2
