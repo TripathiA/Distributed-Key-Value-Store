@@ -96,6 +96,7 @@ def get_sent_state():
     return sent
 
 def set_kvstore(kvstore):
+    global key_value_store
     key_value_store = kvstore
 
 def set_stab_kvstore(kvstore):
@@ -114,7 +115,7 @@ def acc_kvstore(port,calling_ports):
     kvstore = servers[port].stabilize(False,calling_ports)
     if kvstore:
         for key in kvstore:
-            if ((key not in key_value_store) or (key in key_value_store and kvstore[key][1] > key_value_store[key][1])):
+            if ((key not in key_value_store) or (kvstore[key][1] > key_value_store[key][1]) or (kvstore[key][1] == key_value_store[key][1] and kvstore[key][2] > key_value_store[key][2])):
                 key_value_store[key] = kvstore[key]
     return ""
 

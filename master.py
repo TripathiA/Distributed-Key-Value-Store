@@ -87,7 +87,7 @@ def get(clientId,key):
 	return val
 
 def stabilize():
-	for s in servers:
+	for s in sorted(servers):
 		#print("do stabilize = "+s)
 		servers[s].request("stabilize")
 		#print("stabilized = "+s)
@@ -95,7 +95,7 @@ def stabilize():
 def printStore(serverId):
 	print("Kvstore for "+serverId)
 	kvstore = json.loads(servers[serverId].request("get_kvstore"))
-	for k in kvstore:
+	for k in sorted(kvstore):
 		print(k+" : "+str(kvstore[k][0]))
 	# print(kvstore)
 
