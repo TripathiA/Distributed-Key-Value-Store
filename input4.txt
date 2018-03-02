@@ -1,0 +1,108 @@
+joinServer 2
+joinServer 3
+joinServer 4
+joinServer 5
+joinServer 6
+joinClient 21 2
+joinClient 31 3
+joinClient 41 4
+joinClient 51 5
+joinClient 61 6
+put 21 1 20
+put 31 1 30
+put 41 1 40
+put 51 1 50
+put 61 1 60
+put 21 2 20
+put 31 3 30
+put 41 4 40
+put 51 5 50
+put 61 6 60
+stabilize
+printStore 2
+printStore 3
+printStore 4
+printStore 5
+printStore 6
+breakConnection 61 6
+createConnection 51 6
+put 51 1 7
+get 51 1
+printStore 5
+printStore 6
+breakConnection 2 4
+breakConnection 2 5
+breakConnection 6 3
+breakConnection 6 4
+breakConnection 3 5
+put 21 12 20
+put 31 13 30
+put 41 14 40
+put 51 15 50
+put 61 16 60
+put 51 17 100
+createConnection 51 3
+breakConnection 51 6
+breakConnection 51 5
+get 51 17
+printStore 3
+printStore 5
+printStore 6
+stabilize
+printStore 2
+printStore 3
+printStore 4
+printStore 5
+printStore 6
+killServer 6
+put 51 18 200
+get 51 18
+breakConnection 3 4
+put 51 17 70
+get 51 17
+breakConnection 51 3
+createConnection 51 5
+get 51 17
+printStore 3
+printStore 5
+stabilize
+printStore 2
+printStore 3
+printStore 4
+printStore 5
+breakConnection 21 2
+createConnection 21 3
+put 21 18 11 
+put 31 18 90
+get 21 18
+get 31 18
+put 21 14 100
+createConnection 3 4
+stabilize
+printStore 2
+printStore 3
+printStore 4
+printStore 5
+joinServer 7
+breakConnection 7 5
+joinClient 71 7
+put 71 18 100
+get 71 18
+breakConnection 7 71
+createConnection 71 5
+get 71 18
+stabilize
+printStore 2
+printStore 7
+joinClient 81 7
+put 81 20 20
+put 71 20 21
+breakConnection 81 7
+breakConnection 71 5
+createConnection 81 5
+createConnection 71 7
+get 71 20
+get 81 20
+joinServer 8
+stabilize
+printStore 8

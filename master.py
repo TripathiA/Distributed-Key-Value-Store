@@ -16,6 +16,7 @@ clients = dict()
 client_pid = dict()
 
 def joinServer(id):
+	id = str(int(id)+8000)
 	#server.start(id)
 	queue = multiprocessing.Queue()
 	proc = multiprocessing.Process(target=server.start, args=(id,queue,))
@@ -36,6 +37,10 @@ def joinServer(id):
 			servers[id].request("connect_to_server "+s)
 
 def killServer(id):
+	id = str(int(id)+8000)
+	if(id not in servers):
+		print("This server was not instantiated")
+		return
 	for s in servers:
 		servers[s].disconnect_server(id)
 	for c in clients:
@@ -47,6 +52,11 @@ def killServer(id):
 	server_pid.pop(id)
 
 def joinClient(clientId, serverId):
+	clientId = str(int(clientId)+8000)
+	serverId = str(int(serverId)+8000)
+	if(serverId not in servers):
+		print("This server was not instantiated")
+		return
 	queue = multiprocessing.Queue()
 	proc = multiprocessing.Process(target=client.start, args=(clientId,queue,))
 	proc.start()
@@ -59,28 +69,44 @@ def joinClient(clientId, serverId):
 	clients[clientId].request("connect_to_server "+serverId)
 
 def breakConnection(id1,id2):
+	id1 = str(int(id1)+8000)
+	id2 = str(int(id2)+8000)
 	if id1 in clients:
 		clients[id1].request("disconnect_server "+id2)
 	elif id2 in clients:
 		clients[id2].request("disconnect_server "+id1)
-	else:
+	elif (id1 in servers and id2 in servers):
 		servers[id1].request("disconnect_server "+id2)
 		servers[id2].request("disconnect_server "+id1)
+	else:
+		print("Give instantiated port numbers")
 
 def createConnection(id1,id2):
+	id1 = str(int(id1)+8000)
+	id2 = str(int(id2)+8000)
 	if id1 in clients:
 		clients[id1].request("connect_to_server "+id2)
 	elif id2 in clients:
 		clients[id2].request("connect_to_server "+id1)
-	else:
+	elif (id1 in servers and id2 in servers):
 		servers[id1].request("connect_to_server "+id2)
 		servers[id2].request("connect_to_server "+id1)
+	else:
+		print("Give instantiated port numbers")
 
 def put(clientId,key,value):
+	clientId = str(int(clientId)+8000)
+	if (clientId not in clients):
+		print("This Client is not instantiated")
+		return
 	#print ("put "+str(key)+" "+str(value)+ " "+str(clientId))
 	clients[clientId].request("put "+str(key)+" "+str(value))
 
 def get(clientId,key):
+	clientId = str(int(clientId)+8000)
+	if (clientId not in clients):
+		print("This Client is not instantiated")
+		return
 	#print ("get "+str(key)+" "+str(clientId))
 	val = clients[clientId].request("get "+str(key))
 	#print ("get of " + str(key) + " returns "+str(val))
@@ -93,8 +119,11 @@ def stabilize():
 		#print("stabilized = "+s)
 
 def printStore(serverId):
-	print("Kvstore for "+serverId)
+	print("\nKvstore for "+serverId)
+	serverId = str(int(serverId)+8000)
 	kvstore = json.loads(servers[serverId].request("get_kvstore"))
+	if(len(kvstore) == 0):
+		print("Key value store empty")
 	for k in sorted(kvstore):
 		print(k+" : "+str(kvstore[k][0]))
 	# print(kvstore)
@@ -104,7 +133,9 @@ def call():
 
 def parse_req(command):
     words = command.rstrip().split(" ")
-    if (len(words) == 4):
+    if (len(words) == 0 or words[0] == ""):
+    	return "Not a proper command"
+    elif (len(words) == 4):
         return json.dumps(globals()[words[0]](words[1],words[2],words[3]))
     elif (len(words) == 3):
         return json.dumps(globals()[words[0]](words[1],words[2]))
@@ -119,9 +150,9 @@ while(req != ""):
 	    req = input("")
 	except EOFError:
 		break
+	print(req, end = "")
 	ret = parse_req(req)
 	    #ret = proxy.request(req + " " + str(timestamp))
-	print(req, end = "")
 	if ret and ret != "null":
 		print(": " +ret)
 	else:
